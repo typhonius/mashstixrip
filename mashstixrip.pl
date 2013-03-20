@@ -9,6 +9,7 @@ my $cwd = getcwd;
 my $path = "http://www.mashstix.com/Downloads/download.php?stixnum=";
 my $count_404 = 0;
 my $writeable = 0;
+our $directory = '';
 
 sub download_url_parser($) {
   my $raw = shift;
@@ -20,7 +21,6 @@ sub download_url_parser($) {
     }
     elsif ($_ =~ m/<title>(.*)<\/title>/) {
       $title = $1;
-      print "Found $title\n";
     }
   }
   return ($url, $title);
@@ -28,7 +28,7 @@ sub download_url_parser($) {
 
 sub rip_all_the_things() {
   # currently testing numbers to ensure the pattern matching works
-  for (my $i = 3212; $i <= 3230; $i++) {
+  for (my $i = 0; $count_404 <= 5; $i++) {
     #print "Processing track id " . $i;
     $i = sprintf("%6d", $i);
     $i=~ tr/ /0/;
@@ -41,7 +41,12 @@ sub rip_all_the_things() {
     }
     else {
       my ($download_url, $title) = download_url_parser($response->content);
-      getstore($download_url, $directory . $title);
+      if (is_success(getstore($download_url, $directory . '/' . $title . '.mp3'))) {
+        print "Success downloading $title\n";
+      }
+      else {
+        print "Error downloading $title - $download_url - ID: $i\n";
+      }
     }
   }
 }
@@ -53,7 +58,7 @@ To use this directory type '.' otherwise enter a relative path from
 $cwd or absolute path to proceed.
 Enter the directory to download to: ";
   # Capture the user input minus any newlines.
-  chomp(our $directory = <>);
+  chomp($directory = <>);
 
   # if it's writeable carry on, otherwise try to create a directory,
   # otherwise just ask again.
